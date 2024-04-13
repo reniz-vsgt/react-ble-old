@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BluetoothDevice, IBleProps, RequestDeviceOptions } from './BLE.types';
+import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, BluetoothRemoteGATTService, IBleProps, RequestDeviceOptions } from './BLE.types';
 import { Space, Typography, Button, Spin } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
@@ -21,10 +21,10 @@ const contentStyle: React.CSSProperties = {
 
 
 const BLE: React.FC<IBleProps> = ({
-    readService,
-    readChar,
-    writeService,
-    writeChar,
+    readServiceUUID,
+    readCharUUID,
+    writeServiceUUID,
+    writeCharUUID,
     speed,
     writeValue,
     message
@@ -38,6 +38,17 @@ const BLE: React.FC<IBleProps> = ({
     const [seconds, setSeconds] = useState<number>(0)
     const [min, setMin] = React.useState<number>(0);
     const [sec, setSec] = React.useState<number>(0);
+
+    const [service, setService] = useState<BluetoothRemoteGATTServer | undefined>();
+
+    // const [writeService, setWriteService] = useState<BluetoothRemoteGATTService>();
+    const [writeChar, setWriteChar] = useState<BluetoothRemoteGATTCharacteristic>();
+
+    // const [readService, setReadService] = useState<BluetoothRemoteGATTService>();
+    const [readChar, setReadChar] = useState<BluetoothRemoteGATTCharacteristic>();
+    const [timer, setTimer] = useState<NodeJS.Timer>()
+
+
 
 
 
@@ -56,21 +67,22 @@ const BLE: React.FC<IBleProps> = ({
 
 
     useEffect((): void => {
-        makeTimeForm(Math.trunc(seconds));
+        makeTimeForm(seconds);
     }, [seconds]);
 
 
-    const mergeArrays = (arrays : any) => {
-        const totalLength = arrays.reduce((acc:any, arr:any) => acc + arr.length, 0);
+
+    const mergeArrays = (arrays: any) => {
+        const totalLength = arrays.reduce((acc: any, arr: any) => acc + arr.length, 0);
         const merged = new Uint8Array(totalLength);
         let offset = 0;
-        arrays.forEach((arr:any) => {
-          merged.set(arr, offset);
-          offset += arr.length;
+        arrays.forEach((arr: any) => {
+            merged.set(arr, offset);
+            offset += arr.length;
         });
         return merged;
-      };
-    
+    };
+
 
 
     useEffect(() => {
@@ -85,11 +97,26 @@ const BLE: React.FC<IBleProps> = ({
         try {
             const options: RequestDeviceOptions = {
                 acceptAllDevices: true,
-                optionalServices: [readService, writeService],
+                optionalServices: [readServiceUUID, writeServiceUUID],
             };
             const device = await (navigator as any).bluetooth.requestDevice(options);
-
             setDevice(device);
+            console.log(device, "----------------> device")
+
+            const service = await device.gatt?.connect();
+            console.log(service, "----------------> service")
+            setService(service);
+
+            const readService = await service.getPrimaryService(readServiceUUID);
+            // setReadService(readService)
+            const readChar = await readService.getCharacteristic(readCharUUID);
+            setReadChar(readChar)
+
+            const writeService = await service.getPrimaryService(writeServiceUUID);
+            // setWriteService(writeService)
+            const writeChar = await writeService.getCharacteristic(writeCharUUID);
+            setWriteChar(writeChar)
+
         } catch (error) {
             console.error('Failed to connect:', error);
         }
@@ -103,12 +130,12 @@ const BLE: React.FC<IBleProps> = ({
             return;
         }
         try {
-            const service = await device.gatt?.connect();
+            // const service = await device.gatt?.connect();
 
             if (service) {
 
-                const Service = await service.getPrimaryService(writeService);
-                const characteristic: any = await Service.getCharacteristic(writeChar);
+                // const Service = await service.getPrimaryService(writeServiceUUID);
+                // const characteristic = await Service.getCharacteristic(writeCharUUID);
                 const uint8 = new Uint8Array(16);
 
                 uint8[0] = 0;
@@ -128,7 +155,7 @@ const BLE: React.FC<IBleProps> = ({
                 uint8[14] = 0;
                 uint8[15] = 0;
 
-                await characteristic?.writeValue(uint8);
+                await writeChar?.writeValue(uint8);
                 console.log("Value Written successfully!!!");
             }
 
@@ -147,19 +174,36 @@ const BLE: React.FC<IBleProps> = ({
             return;
         }
         try {
-            const service = await device.gatt?.connect();
+            // const service = await device.gatt?.connect();
             if (service) {
-                const Service = await service.getPrimaryService(readService);
-                const characteristic = await Service.getCharacteristic(readChar);
+                // const Service = await service.getPrimaryService(readServiceUUID);
+                // const characteristic = await Service.getCharacteristic(readCharUUID);
                 try {
-                    characteristic.startNotifications().then((val) => {
-                        const data = new Uint8Array(val.value?.buffer || new ArrayBuffer(0));
-                        // var string = new TextDecoder().decode(data);
-                        // console.log(data, "-------------------> data");
-                        // console.log(typeof data, "-------------------> typeof data");
-                        setCharacteristicValue(data)
+                    // readChar?.startNotifications().then((val) => {
+                    //     const data = new Uint8Array(val.value?.buffer || new ArrayBuffer(0));
+                    //     console.log(data, "------------data");
 
-                    })
+                    //     // var string = new TextDecoder().decode(data);
+                    //     // console.log(data, "-------------------> data");
+                    //     // console.log(typeof data, "-------------------> typeof data");
+                    //     setCharacteristicValue(data)
+
+                    // })
+                    // const val = await readChar?.startNotifications();
+                    // const data = new Uint8Array(val?.value?.buffer || new ArrayBuffer(0));
+                    // console.log("reading data...");
+
+                    // setCharacteristicValue(data)
+
+                    const intervalId = setInterval(async () => {
+                        const val = await readChar?.startNotifications();
+                        const data = new Uint8Array(val?.value?.buffer || new ArrayBuffer(0));
+                        console.log("reading data...");
+
+                        setCharacteristicValue(data)
+                    }, speed)
+                    setIntervalId(intervalId)
+
                 }
                 catch (error) {
                     console.error('Failed to read data:', error);
@@ -179,6 +223,7 @@ const BLE: React.FC<IBleProps> = ({
     const stopTimer = () => {
         setLoader(false)
         clearInterval(intervalId)
+        clearInterval(timer)
         download(finalData, device?.name + ".bin")
         setFinalData(new Uint8Array(0));
 
@@ -222,7 +267,13 @@ const BLE: React.FC<IBleProps> = ({
         // link.click();
 
     };
-
+    const startTimer = async () => {
+        setLoader(true)
+        const intervalId = setInterval(async () => {
+            setSeconds(seconds => seconds + 1)
+        }, 1000)
+        setTimer(intervalId)
+    }
 
     return (
         <>
@@ -234,8 +285,10 @@ const BLE: React.FC<IBleProps> = ({
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {device != null ? (
                             <>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={getData}>Subscribe</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => {
+                                    readCharacteristic();
+                                    startTimer()
+                                }}>Subscribe</Button>                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop Reading</Button>
                                 <br />
                             </>

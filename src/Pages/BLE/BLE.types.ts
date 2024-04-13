@@ -5,10 +5,10 @@
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 export interface IBleProps{
-    readService : string
-    readChar : string
-    writeService : string
-    writeChar : string
+    readServiceUUID : string
+    readCharUUID : string
+    writeServiceUUID : string
+    writeCharUUID : string
     speed : number
     writeValue : any,
     message : string
