@@ -9,7 +9,6 @@ export interface IBleProps{
     readCharUUID : string
     writeServiceUUID : string
     writeCharUUID : string
-    speed : number
     writeValue : any,
     message : string
   }
