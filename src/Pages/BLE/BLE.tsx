@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { BluetoothDevice, IBleProps, RequestDeviceOptions } from './BLE.types';
-import { Space, Typography, Button, Spin } from 'antd';
+import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, RequestDeviceOptions } from './BLE.types';
+import { Space, Typography, Button } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
@@ -21,11 +21,10 @@ const contentStyle: React.CSSProperties = {
 
 
 const BLE: React.FC<IBleProps> = ({
-    readService,
-    readChar,
-    writeService,
-    writeChar,
-    speed,
+    readServiceUUID,
+    readCharUUID,
+    writeServiceUUID,
+    writeCharUUID,
     writeValue,
     message
 }) => {
@@ -33,13 +32,17 @@ const BLE: React.FC<IBleProps> = ({
     const [device, setDevice] = useState<BluetoothDevice | null>(null);
     const [characteristicValue, setCharacteristicValue] = useState<Uint8Array>();
     const [finalData, setFinalData] = useState<Uint8Array>(new Uint8Array(0));
-    const [intervalId, setIntervalId] = useState<NodeJS.Timer>()
     const [loader, setLoader] = useState<boolean>(false)
     const [seconds, setSeconds] = useState<number>(0)
     const [min, setMin] = React.useState<number>(0);
     const [sec, setSec] = React.useState<number>(0);
 
+    const [service, setService] = useState<BluetoothRemoteGATTServer | undefined>();
 
+    const [writeChar, setWriteChar] = useState<BluetoothRemoteGATTCharacteristic>();
+
+    const [readChar, setReadChar] = useState<BluetoothRemoteGATTCharacteristic>();
+    const [timer, setTimer] = useState<NodeJS.Timer>()
 
 
     const makeTimeForm = (time: number): void => {
@@ -56,21 +59,22 @@ const BLE: React.FC<IBleProps> = ({
 
 
     useEffect((): void => {
-        makeTimeForm(Math.trunc(seconds));
+        makeTimeForm(seconds);
     }, [seconds]);
 
 
-    const mergeArrays = (arrays : any) => {
-        const totalLength = arrays.reduce((acc:any, arr:any) => acc + arr.length, 0);
+
+    const mergeArrays = (arrays: any) => {
+        const totalLength = arrays.reduce((acc: any, arr: any) => acc + arr.length, 0);
         const merged = new Uint8Array(totalLength);
         let offset = 0;
-        arrays.forEach((arr:any) => {
-          merged.set(arr, offset);
-          offset += arr.length;
+        arrays.forEach((arr: any) => {
+            merged.set(arr, offset);
+            offset += arr.length;
         });
         return merged;
-      };
-    
+    };
+
 
 
     useEffect(() => {
@@ -85,11 +89,22 @@ const BLE: React.FC<IBleProps> = ({
         try {
             const options: RequestDeviceOptions = {
                 acceptAllDevices: true,
-                optionalServices: [readService, writeService],
+                optionalServices: [readServiceUUID, writeServiceUUID],
             };
             const device = await (navigator as any).bluetooth.requestDevice(options);
-
             setDevice(device);
+
+            const service = await device.gatt?.connect();
+            setService(service);
+
+            const readService = await service.getPrimaryService(readServiceUUID);
+            const readChar = await readService.getCharacteristic(readCharUUID);
+            setReadChar(readChar)
+
+            const writeService = await service.getPrimaryService(writeServiceUUID);
+            const writeChar = await writeService.getCharacteristic(writeCharUUID);
+            setWriteChar(writeChar)
+
         } catch (error) {
             console.error('Failed to connect:', error);
         }
@@ -103,32 +118,12 @@ const BLE: React.FC<IBleProps> = ({
             return;
         }
         try {
-            const service = await device.gatt?.connect();
-
             if (service) {
-
-                const Service = await service.getPrimaryService(writeService);
-                const characteristic: any = await Service.getCharacteristic(writeChar);
                 const uint8 = new Uint8Array(16);
-
-                uint8[0] = 0;
-                uint8[1] = 0;
-                uint8[2] = 1;
-                uint8[3] = 0;
-                uint8[4] = 1;
-                uint8[5] = 1;
-                uint8[6] = 0;
-                uint8[7] = 1;
-                uint8[8] = 0;
-                uint8[9] = 0;
-                uint8[10] = 0;
-                uint8[11] = 0;
-                uint8[12] = 0;
-                uint8[13] = 0;
-                uint8[14] = 0;
-                uint8[15] = 0;
-
-                await characteristic?.writeValue(uint8);
+                for (let index = 0; index < newValue.length; index++) {
+                    uint8[index] = parseInt(newValue[index]);
+                }
+                await writeChar?.writeValue(uint8);
                 console.log("Value Written successfully!!!");
             }
 
@@ -147,19 +142,18 @@ const BLE: React.FC<IBleProps> = ({
             return;
         }
         try {
-            const service = await device.gatt?.connect();
             if (service) {
-                const Service = await service.getPrimaryService(readService);
-                const characteristic = await Service.getCharacteristic(readChar);
-                try {
-                    characteristic.startNotifications().then((val) => {
-                        const data = new Uint8Array(val.value?.buffer || new ArrayBuffer(0));
-                        // var string = new TextDecoder().decode(data);
-                        // console.log(data, "-------------------> data");
-                        // console.log(typeof data, "-------------------> typeof data");
-                        setCharacteristicValue(data)
 
-                    })
+                try {
+                    await readChar?.startNotifications();
+                    startTimer()
+                    readChar?.addEventListener('characteristicvaluechanged', (event) => {
+                        const val = (event.target as BluetoothRemoteGATTCharacteristic).value?.buffer;
+                        if (val) {
+                            const data = new Uint8Array(val || new ArrayBuffer(0));
+                            setCharacteristicValue(data)
+                        }
+                    });
                 }
                 catch (error) {
                     console.error('Failed to read data:', error);
@@ -178,33 +172,13 @@ const BLE: React.FC<IBleProps> = ({
 
     const stopTimer = () => {
         setLoader(false)
-        clearInterval(intervalId)
+        clearInterval(timer)
         download(finalData, device?.name + ".bin")
         setFinalData(new Uint8Array(0));
 
     }
 
-    const getData = async () => {
-        setLoader(true)
-        const intervalId = setInterval(async () => {
-            setSeconds(seconds => seconds + 1 / speed)
-            readCharacteristic()
-        }, speed)
-        setIntervalId(intervalId)
-    }
-
-    // const download = (data: string, fileName: string) => {
-    //     let csvContent = "data:text/csv;charset=utf-8," + data;
-    //     var encodedUri = encodeURI(csvContent);
-    //     var link = document.createElement("a");
-    //     link.setAttribute("href", encodedUri);
-    //     link.setAttribute("download", fileName);
-    //     document.body.appendChild(link);
-    //     link.click();
-    // };
-
     const download = (data: any, filename: string) => {
-        // Function to handle writing data to a .bin file
         const blob = new Blob([data], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -214,15 +188,15 @@ const BLE: React.FC<IBleProps> = ({
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        // const encodedUri = URL.createObjectURL(blob);
-        // var link = document.createElement("a");
-        // link.setAttribute("href", encodedUri);
-        // link.setAttribute("download", filename);
-        // document.body.appendChild(link);
-        // link.click();
 
     };
-
+    const startTimer = async () => {
+        setLoader(true)
+        const intervalId = setInterval(async () => {
+            setSeconds(seconds => seconds + 1)
+        }, 1000)
+        setTimer(intervalId)
+    }
 
     return (
         <>
@@ -234,7 +208,7 @@ const BLE: React.FC<IBleProps> = ({
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {device != null ? (
                             <>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={getData}>Subscribe</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Subscribe</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop Reading</Button>
                                 <br />
@@ -244,12 +218,7 @@ const BLE: React.FC<IBleProps> = ({
                     <br />
                     <br />
                     <Space wrap={true} size="large">
-                        {device &&
-                            <>
-                                <p>Connected to device: {device.name}</p>
-                            </>
-
-                        }
+                        {device && <p>Connected to device: {device.name}</p>}
 
                     </Space>
                     {loader ? (
