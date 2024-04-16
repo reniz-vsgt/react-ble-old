@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, RequestDeviceOptions } from './BLE.types';
-import { Space, Typography, Button } from 'antd';
+import { Space, Typography, Button, Modal, Form, Input } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
@@ -43,6 +43,10 @@ const BLE: React.FC<IBleProps> = ({
 
     const [readChar, setReadChar] = useState<BluetoothRemoteGATTCharacteristic>();
     const [timer, setTimer] = useState<NodeJS.Timer>()
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [sensorCommand, setSensorCommand] = useState<string>("")
+
+
 
 
     const makeTimeForm = (time: number): void => {
@@ -116,6 +120,11 @@ const BLE: React.FC<IBleProps> = ({
             console.error('No device connected');
             alert("Please connect a device first")
             return;
+        }
+        if (sensorCommand == "") {
+            console.error('Please enter command for sensor first');
+            alert("Please enter command for sensor first")
+            return; 
         }
         try {
             if (service) {
@@ -198,6 +207,10 @@ const BLE: React.FC<IBleProps> = ({
         setTimer(intervalId)
     }
 
+    const handleCancel = () => {
+        setIsModalOpen(false);
+    };
+
     return (
         <>
 
@@ -208,8 +221,9 @@ const BLE: React.FC<IBleProps> = ({
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {device != null ? (
                             <>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Subscribe</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(sensorCommand)}>Write</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop Reading</Button>
                                 <br />
                             </>
@@ -248,6 +262,16 @@ const BLE: React.FC<IBleProps> = ({
 
                 </Content>
             </Layout>
+            <Modal title="Enter Details" open={isModalOpen} footer={null} onCancel={handleCancel}>
+                <Form>
+                    <Form.Item label="Enter Sensors command">
+                        <Input placeholder="Enter Sensors command" onChange={(e) => setSensorCommand(e.target.value)} />
+                    </Form.Item>
+                    <Form.Item>
+                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" onClick={handleCancel}>Submit</Button>
+                    </Form.Item>
+                </Form>
+            </Modal>
 
         </>
 
