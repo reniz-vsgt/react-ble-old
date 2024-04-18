@@ -121,11 +121,11 @@ const BLE: React.FC<IBleProps> = ({
             alert("Please connect a device first")
             return;
         }
-        if (sensorCommand == "") {
-            console.error('Please enter command for sensor first');
-            alert("Please enter command for sensor first")
-            return; 
-        }
+        // if (sensorCommand == "") {
+        //     console.error('Please enter command for sensor first');
+        //     alert("Please enter command for sensor first")
+        //     return; 
+        // }
         try {
             if (service) {
                 const uint8 = new Uint8Array(16);
@@ -221,9 +221,10 @@ const BLE: React.FC<IBleProps> = ({
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {device != null ? (
                             <>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
+                                {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button> */}
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Subscribe</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(sensorCommand)}>Write</Button>
+                                {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(sensorCommand)}>Write</Button> */}
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop Reading</Button>
                                 <br />
                             </>
