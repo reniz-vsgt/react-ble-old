@@ -4,7 +4,7 @@ const stream = {
   readChar: "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
   writeService: "dd8c1300-3ae2-5c42-b8be-96721cd710fe",
   writeChar: "dd8c1303-3ae2-5c42-b8be-96721cd710fe",
-  writeValue: "0010110100000000",
+  writeValue: "0010110111110000",
   message: "Read data as stream"
 }
 
