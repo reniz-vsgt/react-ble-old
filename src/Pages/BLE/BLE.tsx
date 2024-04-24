@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, RequestDeviceOptions } from './BLE.types';
-import { Space, Typography, Button, Modal, Form, Input, FormProps } from 'antd';
+import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
 import { LineChart } from '@mui/x-charts/LineChart';
 
+const { Option } = Select;
 
 cardio.register()
 
 
 export interface IFormData {
-    name: string
+    subjectId: string
     age: number
     height: number
     weight: number
+    gender: string
+    diabetic: boolean
+
 }
 
 const { Title } = Typography;
@@ -83,17 +87,18 @@ const BLE: React.FC<IBleProps> = ({
 
         try {
             const response = await fetch(
-                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&name=${formData?.name}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}`,
+                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&`,
+
                 requestOptions
             );
 
             if (!response.ok) {
+                alert(`HTTP error! Status: ${response.status}`)
                 throw new Error(`HTTP error! Status: ${response.status}`);
             }
 
             const data = await response.json();
             setGraphData(data)
-            console.log(data);
         } catch (error) {
             console.error("Error:", error);
         }
@@ -211,9 +216,19 @@ const BLE: React.FC<IBleProps> = ({
                 try {
                     await readChar?.startNotifications();
                     startTimer()
-                    const today = (new Date().toISOString())
-                    const timestamp = today.substring(0, today.length - 1);
-                    setStartTimestamp(timestamp)
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+                    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+                    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+
+                    setStartTimestamp(formattedDateTime)
 
                     readChar?.addEventListener('characteristicvaluechanged', (event) => {
                         const val = (event.target as BluetoothRemoteGATTCharacteristic).value?.buffer;
@@ -260,6 +275,8 @@ const BLE: React.FC<IBleProps> = ({
     };
 
     const onFinish: FormProps<IFormData>['onFinish'] = (values) => {
+        if (!values.diabetic)
+            values.diabetic = false
         setFormData(values)
         setIsModalOpen(false)
     };
@@ -318,18 +335,18 @@ const BLE: React.FC<IBleProps> = ({
 
                     {graphData && (
                         <LineChart
-                        xAxis={[{ data: graphData.payload.ticks }]}
-                        series={[
-                          {
-                            data: graphData.payload.co2_percentage,
-                            showMark: false,
-                          },
-                        ]}
-                        height={600}
-                        width={900}
-                        margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
-                        grid={{ vertical: true, horizontal: true }}
-                      />
+                            xAxis={[{ data: graphData.payload.ticks }]}
+                            series={[
+                                {
+                                    data: graphData.payload.co2_percentage,
+                                    showMark: false,
+                                },
+                            ]}
+                            height={600}
+                            width={900}
+                            margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
+                            grid={{ vertical: true, horizontal: true }}
+                        />
                     )}
 
                 </Content>
@@ -346,8 +363,8 @@ const BLE: React.FC<IBleProps> = ({
                     autoComplete="off"
                 >
                     <Form.Item
-                        label="Name"
-                        name="name"
+                        label="Subject ID"
+                        name="subjectId"
                         rules={[{ required: true, message: 'Please input your name!' }]}
                     >
                         <Input />
@@ -372,6 +389,22 @@ const BLE: React.FC<IBleProps> = ({
                         rules={[{ required: true, message: 'Please input your weight!' }]}
                     >
                         <Input type='number' />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="gender"
+                        label="Gender"
+                        rules={[{ required: true, message: 'Please select gender!' }]}
+                    >
+                        <Select placeholder="select your gender">
+                            <Option value="male">Male</Option>
+                            <Option value="female">Female</Option>
+                            <Option value="other">Other</Option>
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item label="Diabetic" name={"diabetic"} valuePropName="checked">
+                        <Switch />
                     </Form.Item>
 
 
