@@ -322,6 +322,7 @@ const BLE: React.FC<IBleProps> = ({
                         series={[
                           {
                             data: graphData.payload.co2_percentage,
+                            showMark: false,
                           },
                         ]}
                         height={600}
