@@ -5,6 +5,7 @@ import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
 import { LineChart } from '@mui/x-charts/LineChart';
+import TextArea from 'antd/es/input/TextArea';
 
 const { Option } = Select;
 
@@ -18,7 +19,8 @@ export interface IFormData {
     weight: number
     gender: string
     diabetic: boolean
-
+    latestWeight: boolean
+    comments: string
 }
 
 const { Title } = Typography;
@@ -87,7 +89,7 @@ const BLE: React.FC<IBleProps> = ({
 
         try {
             const response = await fetch(
-                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&`,
+                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
 
                 requestOptions
             );
@@ -148,8 +150,15 @@ const BLE: React.FC<IBleProps> = ({
     const connectToDevice = async () => {
         try {
             const options: RequestDeviceOptions = {
-                acceptAllDevices: true,
                 optionalServices: [readServiceUUID, writeServiceUUID],
+                filters: [
+                    {
+                        namePrefix: "MB4"
+                    },
+                    {
+                        namePrefix: "bBand"
+                    },
+                ]
             };
             const device = await (navigator as any).bluetooth.requestDevice(options);
             setDevice(device);
@@ -201,6 +210,7 @@ const BLE: React.FC<IBleProps> = ({
 
 
     const readCharacteristic = async () => {
+        await writeCharacteristic(writeValue)
         if (!device) {
             console.error('No device connected');
             alert('Please connect a device first');
@@ -254,6 +264,8 @@ const BLE: React.FC<IBleProps> = ({
 
 
     const stopTimer = () => {
+        device?.gatt?.disconnect();
+        setDevice(null)
         setLoader(false)
         clearInterval(timer)
         // download(finalData, device?.name + ".bin")
@@ -263,6 +275,7 @@ const BLE: React.FC<IBleProps> = ({
     }
 
     const startTimer = async () => {
+        setSeconds(0)
         setLoader(true)
         const intervalId = setInterval(async () => {
             setSeconds(seconds => seconds + 1)
@@ -277,6 +290,8 @@ const BLE: React.FC<IBleProps> = ({
     const onFinish: FormProps<IFormData>['onFinish'] = (values) => {
         if (!values.diabetic)
             values.diabetic = false
+        if (!values.latestWeight)
+            values.latestWeight = false        
         setFormData(values)
         setIsModalOpen(false)
     };
@@ -294,9 +309,8 @@ const BLE: React.FC<IBleProps> = ({
                         {device != null ? (
                             <>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Subscribe</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => writeCharacteristic(writeValue)}>Write</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop Reading</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Start</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop</Button>
                                 <br />
 
                             </>
@@ -405,6 +419,14 @@ const BLE: React.FC<IBleProps> = ({
 
                     <Form.Item label="Diabetic" name={"diabetic"} valuePropName="checked">
                         <Switch />
+                    </Form.Item>
+
+                    <Form.Item label="Latest Weight ?" name={"latestWeight"} valuePropName="checked">
+                        <Switch />
+                    </Form.Item>
+
+                    <Form.Item label="Comments" name={"comments"}>
+                        <TextArea showCount maxLength={100} placeholder="Comments" />
                     </Form.Item>
 
 
