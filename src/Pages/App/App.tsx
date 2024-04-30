@@ -54,7 +54,7 @@ function App() {
     <>
 
       <React.StrictMode>
-        {/* <Router>
+        <Router>
           <Routes>
             <Route path="/" element={ <Navigate to="/react-ble" />}/>
             <Route path='/react-ble' element={
@@ -84,8 +84,8 @@ function App() {
               />
             } />
           </Routes>
-        </Router> */}
-        <BLE
+        </Router>
+        {/* <BLE
           readServiceUUID={stream.readService}
           readCharUUID={stream.readChar}
           writeServiceUUID={stream.writeService}
@@ -95,7 +95,7 @@ function App() {
           token={process.env.REACT_APP_RND_TOKEN || ""}
           baseUrl={process.env.REACT_APP_RND_BASE_URL || ""}
           env={"RND"}
-        />
+        /> */}
       </React.StrictMode>
     </>
   );
