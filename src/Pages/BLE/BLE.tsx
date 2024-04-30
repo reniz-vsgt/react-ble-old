@@ -325,7 +325,7 @@ const BLE: React.FC<IBleProps> = ({
                     <Title>{message}</Title>
                     <Space wrap={true} size="large">
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
-                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button>
+                        {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button> */}
                         {device != null ? (
                             <>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
