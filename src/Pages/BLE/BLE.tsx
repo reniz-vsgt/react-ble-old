@@ -40,7 +40,10 @@ const BLE: React.FC<IBleProps> = ({
     writeServiceUUID,
     writeCharUUID,
     writeValue,
-    message
+    message,
+    token,
+    baseUrl,
+    env
 }) => {
 
     const [device, setDevice] = useState<BluetoothDevice | null>(null);
@@ -65,16 +68,22 @@ const BLE: React.FC<IBleProps> = ({
     const [graphData, setGraphData] = useState<any>(null)
 
 
-
-
-    const baseUrl = "https://rnd-api.breathai.io"
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2c2d0IjoieydfaWQnOiAnNjYyOGM0MDBkMDE1MzE4MzQyYmFiYTA1JywgJ3VzZXJuYW1lJzogJ3JlYWN0LWJsZScsICdlbWFpbCc6ICdyZW5pekBpbm5vc2NlbnQuaW4nLCAncGFzc3dvcmQnOiAnJDJiJDEyJFBKN21sN2VvcEx6TUpGcGZILndJOC5jb2hWSWFWNndsTEo2QXQ5MXVxd29qOTFnaWljQVcuJywgJ2Rpc3BsYXlOYW1lJzogJycsICdhZ2UnOiAnJywgJ2RhdGVPZkJpcnRoJzogJycsICdnZW5kZXInOiAnJywgJ2NvbnRhY3RJbmZvcm1hdGlvbic6ICcnLCAnbWVkaWNhbENvbmRpdGlvbnMnOiAnJywgJ21lZGljYXRpb25zJzogJycsICdmaXRuZXNzR29hbHMnOiAnJywgJ2ZpdG5lc3NQbGFuJzogJycsICdjaHJvbmljSGVhbHRoQ29uZGl0aW9ucyc6ICcnLCAnbWVkaWNhdGlvbkhpc3RvcnknOiAnJywgJ2RpZXRhcnlIYWJpdHMnOiAnJywgJ3NsZWVwUXVhbGl0eSc6ICcnLCAnbm90ZXNDb21tZW50cyc6ICcnLCAnY3JlYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ2NyZWF0ZWRCeSc6ICdzeXN0ZW0nLCAndXBkYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ3VwZGF0ZWRCeSc6ICdzeXN0ZW0nLCAnaXNBY3RpdmUnOiBUcnVlLCAnaXNEZWxldGVkJzogRmFsc2V9In0.PpKpLrRaaej98Ry6UuKme7lJfb7LaBf8dhqZpsMKT0g"
-
-
     const uploadFile = async (fileData: Uint8Array) => {
+        let bu = ""
+        let tkn = ""
+
+        if (env === "RND") {
+            bu = "https://rnd-api.breathai.io"
+            tkn = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2c2d0IjoieydfaWQnOiAnNjYyOGM0MDBkMDE1MzE4MzQyYmFiYTA1JywgJ3VzZXJuYW1lJzogJ3JlYWN0LWJsZScsICdlbWFpbCc6ICdyZW5pekBpbm5vc2NlbnQuaW4nLCAncGFzc3dvcmQnOiAnJDJiJDEyJFBKN21sN2VvcEx6TUpGcGZILndJOC5jb2hWSWFWNndsTEo2QXQ5MXVxd29qOTFnaWljQVcuJywgJ2Rpc3BsYXlOYW1lJzogJycsICdhZ2UnOiAnJywgJ2RhdGVPZkJpcnRoJzogJycsICdnZW5kZXInOiAnJywgJ2NvbnRhY3RJbmZvcm1hdGlvbic6ICcnLCAnbWVkaWNhbENvbmRpdGlvbnMnOiAnJywgJ21lZGljYXRpb25zJzogJycsICdmaXRuZXNzR29hbHMnOiAnJywgJ2ZpdG5lc3NQbGFuJzogJycsICdjaHJvbmljSGVhbHRoQ29uZGl0aW9ucyc6ICcnLCAnbWVkaWNhdGlvbkhpc3RvcnknOiAnJywgJ2RpZXRhcnlIYWJpdHMnOiAnJywgJ3NsZWVwUXVhbGl0eSc6ICcnLCAnbm90ZXNDb21tZW50cyc6ICcnLCAnY3JlYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ2NyZWF0ZWRCeSc6ICdzeXN0ZW0nLCAndXBkYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ3VwZGF0ZWRCeSc6ICdzeXN0ZW0nLCAnaXNBY3RpdmUnOiBUcnVlLCAnaXNEZWxldGVkJzogRmFsc2V9In0.PpKpLrRaaej98Ry6UuKme7lJfb7LaBf8dhqZpsMKT0g"
+        }
+        else{
+            bu = baseUrl
+            tkn = token
+        }
+
         const myHeaders = new Headers();
         myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + token);
+        myHeaders.append("Authorization", "Bearer " + tkn);
 
         const formdata = new FormData();
         formdata.append("binFile", new Blob([fileData]), "upload.bin");
@@ -89,7 +98,7 @@ const BLE: React.FC<IBleProps> = ({
 
         try {
             const response = await fetch(
-                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
+                `${bu}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
 
                 requestOptions
             );
@@ -271,6 +280,7 @@ const BLE: React.FC<IBleProps> = ({
         // download(finalData, device?.name + ".bin")
         uploadFile(finalData)
         setFinalData(new Uint8Array(0));
+        setStartTimestamp("")
 
     }
 
@@ -291,10 +301,19 @@ const BLE: React.FC<IBleProps> = ({
         if (!values.diabetic)
             values.diabetic = false
         if (!values.latestWeight)
-            values.latestWeight = false        
+            values.latestWeight = false
         setFormData(values)
         setIsModalOpen(false)
     };
+
+    const tp = () => {
+        // console.log(process.env, "----------------------> env");
+        // console.log(process.env.REACT_APP_BASE_URL, "----------------------> BASE_URL");
+        // console.log(process.env.REACT_APP_TOKEN, "----------------------> TOKEN");
+        console.log(token, "-------------> token");
+        console.log(baseUrl, "-------------> baseUrl");
+
+    }
 
 
 
@@ -306,6 +325,7 @@ const BLE: React.FC<IBleProps> = ({
                     <Title>{message}</Title>
                     <Space wrap={true} size="large">
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
+                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button>
                         {device != null ? (
                             <>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
