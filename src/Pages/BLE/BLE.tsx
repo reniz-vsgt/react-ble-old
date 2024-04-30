@@ -301,6 +301,8 @@ const BLE: React.FC<IBleProps> = ({
         // console.log(process.env.REACT_APP_TOKEN, "----------------------> TOKEN");
         console.log(token, "-------------> token");
         console.log(baseUrl, "-------------> baseUrl");
+        console.log(env, "-----------------> env");
+        
 
     }
 

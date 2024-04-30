@@ -1,5 +1,14 @@
 import BLE from '../BLE/BLE';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from 'react';
+import {
+  createHashRouter,
+  Navigate,
+  RouterProvider
+} from 'react-router-dom';
+
+
+
+function App() {
 
 const stream = {
   readService: "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
@@ -10,40 +19,47 @@ const stream = {
   message: "Read data as stream"
 }
 
-function App() {
+const router = createHashRouter([
+  {
+    path: '*',
+    element: <Navigate to="/react-ble" />
+  },
+  {
+    path: 'react-ble',
+    element: <BLE
+      readServiceUUID={stream.readService}
+      readCharUUID={stream.readChar}
+      writeServiceUUID={stream.writeService}
+      writeCharUUID={stream.writeChar}
+      writeValue={stream.writeValue}
+      message={stream.message}
+      token={process.env.REACT_APP_RND_TOKEN || ""}
+      baseUrl={process.env.REACT_APP_RND_BASE_URL || ""}
+      env={"RND"}
+    />,
+  },
+  {
+    path: 'dev',
+    element: <BLE
+      readServiceUUID={stream.readService}
+      readCharUUID={stream.readChar}
+      writeServiceUUID={stream.writeService}
+      writeCharUUID={stream.writeChar}
+      writeValue={stream.writeValue}
+      message={stream.message}
+      token={process.env.REACT_APP_DEV_TOKEN || ""}
+      baseUrl={process.env.REACT_APP_DEV_BASE_URL || ""}
+      env={"DEV"}
+    />
+  }
+]);
+
   return (
     <>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/react-ble" element={
-            <BLE
-              readServiceUUID={stream.readService}
-              readCharUUID={stream.readChar}
-              writeServiceUUID={stream.writeService}
-              writeCharUUID={stream.writeChar}
-              writeValue={stream.writeValue}
-              message={stream.message}
-              token={process.env.REACT_APP_RND_TOKEN || ""}
-              baseUrl={process.env.REACT_APP_RND_BASE_URL || ""}
-              env={"RND"}
-            />
-          } />
-          <Route path="/dev" element={
-            <BLE
-              readServiceUUID={stream.readService}
-              readCharUUID={stream.readChar}
-              writeServiceUUID={stream.writeService}
-              writeCharUUID={stream.writeChar}
-              writeValue={stream.writeValue}
-              message={stream.message}
-              token={process.env.REACT_APP_DEV_TOKEN || ""}
-              baseUrl={process.env.REACT_APP_DEV_BASE_URL || ""}
-              env={"DEV"}
-            />
-          } />
-        </Routes>
-      </BrowserRouter >
-
+     
+      <React.StrictMode>
+        <RouterProvider router={router} />
+      </React.StrictMode>
     </>
   );
 }
