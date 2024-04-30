@@ -28,7 +28,7 @@ function App() {
               env={"RND"}
             />
           } />
-          <Route path="/react-ble/dev" element={
+          <Route path="/dev" element={
             <BLE
               readServiceUUID={stream.readService}
               readCharUUID={stream.readChar}

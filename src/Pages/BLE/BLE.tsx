@@ -69,21 +69,10 @@ const BLE: React.FC<IBleProps> = ({
 
 
     const uploadFile = async (fileData: Uint8Array) => {
-        let bu = ""
-        let tkn = ""
-
-        if (env === "RND") {
-            bu = "https://rnd-api.breathai.io"
-            tkn = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2c2d0IjoieydfaWQnOiAnNjYyOGM0MDBkMDE1MzE4MzQyYmFiYTA1JywgJ3VzZXJuYW1lJzogJ3JlYWN0LWJsZScsICdlbWFpbCc6ICdyZW5pekBpbm5vc2NlbnQuaW4nLCAncGFzc3dvcmQnOiAnJDJiJDEyJFBKN21sN2VvcEx6TUpGcGZILndJOC5jb2hWSWFWNndsTEo2QXQ5MXVxd29qOTFnaWljQVcuJywgJ2Rpc3BsYXlOYW1lJzogJycsICdhZ2UnOiAnJywgJ2RhdGVPZkJpcnRoJzogJycsICdnZW5kZXInOiAnJywgJ2NvbnRhY3RJbmZvcm1hdGlvbic6ICcnLCAnbWVkaWNhbENvbmRpdGlvbnMnOiAnJywgJ21lZGljYXRpb25zJzogJycsICdmaXRuZXNzR29hbHMnOiAnJywgJ2ZpdG5lc3NQbGFuJzogJycsICdjaHJvbmljSGVhbHRoQ29uZGl0aW9ucyc6ICcnLCAnbWVkaWNhdGlvbkhpc3RvcnknOiAnJywgJ2RpZXRhcnlIYWJpdHMnOiAnJywgJ3NsZWVwUXVhbGl0eSc6ICcnLCAnbm90ZXNDb21tZW50cyc6ICcnLCAnY3JlYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ2NyZWF0ZWRCeSc6ICdzeXN0ZW0nLCAndXBkYXRlZEF0JzogZGF0ZXRpbWUuZGF0ZXRpbWUoMjAyNCwgNCwgMTgsIDEyLCA0LCAzMCwgODQxMDAwKSwgJ3VwZGF0ZWRCeSc6ICdzeXN0ZW0nLCAnaXNBY3RpdmUnOiBUcnVlLCAnaXNEZWxldGVkJzogRmFsc2V9In0.PpKpLrRaaej98Ry6UuKme7lJfb7LaBf8dhqZpsMKT0g"
-        }
-        else{
-            bu = baseUrl
-            tkn = token
-        }
 
         const myHeaders = new Headers();
         myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + tkn);
+        myHeaders.append("Authorization", "Bearer " + token);
 
         const formdata = new FormData();
         formdata.append("binFile", new Blob([fileData]), "upload.bin");
@@ -98,7 +87,7 @@ const BLE: React.FC<IBleProps> = ({
 
         try {
             const response = await fetch(
-                `${bu}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
+                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
 
                 requestOptions
             );
