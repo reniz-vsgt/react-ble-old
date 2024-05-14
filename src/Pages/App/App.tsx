@@ -83,6 +83,19 @@ function App() {
                 env={"DEV"}
               />
             } />
+            <Route path='/stg' element={
+              <BLE
+                readServiceUUID={stream.readService}
+                readCharUUID={stream.readChar}
+                writeServiceUUID={stream.writeService}
+                writeCharUUID={stream.writeChar}
+                writeValue={stream.writeValue}
+                message={stream.message}
+                token={process.env.REACT_APP_STG_TOKEN || ""}
+                baseUrl={process.env.REACT_APP_STG_BASE_URL || ""}
+                env={"STAGE"}
+              />
+            } />
           </Routes>
         </Router>
         {/* <BLE

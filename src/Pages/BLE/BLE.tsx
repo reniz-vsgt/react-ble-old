@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, RequestDeviceOptions } from './BLE.types';
-import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select } from 'antd';
+import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select, StatisticProps } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
 import { LineChart } from '@mui/x-charts/LineChart';
 import TextArea from 'antd/es/input/TextArea';
+import { Statistic } from 'antd';
+import CountUp from 'react-countup';
+
+const formatter: StatisticProps['formatter'] = (value) => (
+    <CountUp end={value as number} separator="," />
+);
+
 
 const { Option } = Select;
 
@@ -66,7 +73,31 @@ const BLE: React.FC<IBleProps> = ({
     const [formData, setFormData] = useState<IFormData | null>(null)
 
     const [graphData, setGraphData] = useState<any>(null)
+    const [bglData, setBglData] = useState<any>(null)
 
+    console.log(`ENV : ${env}`);
+    
+    const getBgl = async () => {
+        const myHeaders = new Headers();
+        myHeaders.append("Accept", "application/json");
+        myHeaders.append("Authorization", "Bearer " + token);
+        const requestOptions = {
+            method: "GET",
+            headers: myHeaders,
+        };
+
+        const response = await fetch(`${baseUrl}/api/v1/vsgt-data-service/getBloodGlucoseLevel?timestamp=${startTimestamp}`, requestOptions)
+        if (!response.ok) {
+            alert(`HTTP error! Status: ${response.status}`)
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const bgl = await response.json()
+
+        setBglData(bgl.payload)
+
+        return response
+
+    }
 
     const uploadFile = async (fileData: Uint8Array) => {
 
@@ -85,6 +116,8 @@ const BLE: React.FC<IBleProps> = ({
 
         const deviceId = device?.name;
 
+
+
         try {
             const response = await fetch(
                 `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
@@ -98,6 +131,7 @@ const BLE: React.FC<IBleProps> = ({
             }
 
             const data = await response.json();
+            await getBgl()
             setGraphData(data)
         } catch (error) {
             console.error("Error:", error);
@@ -295,16 +329,16 @@ const BLE: React.FC<IBleProps> = ({
         setIsModalOpen(false)
     };
 
-    const tp = () => {
-        // console.log(process.env, "----------------------> env");
-        // console.log(process.env.REACT_APP_BASE_URL, "----------------------> BASE_URL");
-        // console.log(process.env.REACT_APP_TOKEN, "----------------------> TOKEN");
-        console.log(token, "-------------> token");
-        console.log(baseUrl, "-------------> baseUrl");
-        console.log(env, "-----------------> env");
-        
+    // const tp = () => {
+    //     console.log(process.env, "----------------------> env");
+    //     console.log(process.env.REACT_APP_BASE_URL, "----------------------> BASE_URL");
+    //     console.log(process.env.REACT_APP_TOKEN, "----------------------> TOKEN");
+    //     console.log(token, "-------------> token");
+    //     console.log(baseUrl, "-------------> baseUrl");
+    //     console.log(env, "-----------------> env");
 
-    }
+
+    // }
 
 
 
@@ -358,20 +392,25 @@ const BLE: React.FC<IBleProps> = ({
                         </div>
                     )}
 
-                    {graphData && (
-                        <LineChart
-                            xAxis={[{ data: graphData.payload.ticks }]}
-                            series={[
-                                {
-                                    data: graphData.payload.co2_percentage,
-                                    showMark: false,
-                                },
-                            ]}
-                            height={600}
-                            width={900}
-                            margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
-                            grid={{ vertical: true, horizontal: true }}
-                        />
+                    {graphData && bglData && (
+                        <>
+                            <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
+                            <br /> <br />
+                            <LineChart
+                                xAxis={[{ data: graphData.payload.ticks }]}
+                                series={[
+                                    {
+                                        data: graphData.payload.co2_percentage,
+                                        showMark: false,
+                                    },
+                                ]}
+                                height={600}
+                                width={900}
+                                margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
+                                grid={{ vertical: true, horizontal: true }}
+                            />
+
+                        </>
                     )}
 
                 </Content>
