@@ -75,7 +75,6 @@ const BLE: React.FC<IBleProps> = ({
     const [graphData, setGraphData] = useState<any>(null)
     const [bglData, setBglData] = useState<any>(null)
 
-    console.log(`ENV : ${env}`);
     
     const getBgl = async () => {
         const myHeaders = new Headers();
@@ -242,6 +241,7 @@ const BLE: React.FC<IBleProps> = ({
 
 
     const readCharacteristic = async () => {
+        setFinalData(new Uint8Array(0));
         await writeCharacteristic(writeValue)
         if (!device) {
             console.error('No device connected');
@@ -302,8 +302,6 @@ const BLE: React.FC<IBleProps> = ({
         clearInterval(timer)
         // download(finalData, device?.name + ".bin")
         uploadFile(finalData)
-        setFinalData(new Uint8Array(0));
-        setStartTimestamp("")
 
     }
 
@@ -328,6 +326,20 @@ const BLE: React.FC<IBleProps> = ({
         setFormData(values)
         setIsModalOpen(false)
     };
+
+    const downloadFile = () => {
+        const filename = `${startTimestamp}_${formData?.subjectId}.bin`
+        setStartTimestamp("")
+        const blob = new Blob([finalData], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
     // const tp = () => {
     //     console.log(process.env, "----------------------> env");
@@ -396,6 +408,9 @@ const BLE: React.FC<IBleProps> = ({
                         <>
                             <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
                             <br /> <br />
+                            <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
+                            <br /><br />
+
                             <LineChart
                                 xAxis={[{ data: graphData.payload.ticks }]}
                                 series={[
