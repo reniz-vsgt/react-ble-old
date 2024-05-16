@@ -8,6 +8,10 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import TextArea from 'antd/es/input/TextArea';
 import { Statistic } from 'antd';
 import CountUp from 'react-countup';
+import { useAppSelector } from "../../store/hooks";
+import { ILoginInitialState } from '../Login/login.interface';
+import { selectLoginState } from '../Login/login.slice';
+
 
 const formatter: StatisticProps['formatter'] = (value) => (
     <CountUp end={value as number} separator="," />
@@ -53,6 +57,9 @@ const BLE: React.FC<IBleProps> = ({
     env
 }) => {
 
+    const loginState = useAppSelector<ILoginInitialState>(selectLoginState);
+
+
     const [device, setDevice] = useState<BluetoothDevice | null>(null);
     const [characteristicValue, setCharacteristicValue] = useState<Uint8Array>();
     const [finalData, setFinalData] = useState<Uint8Array>(new Uint8Array(0));
@@ -79,7 +86,7 @@ const BLE: React.FC<IBleProps> = ({
     const getBgl = async () => {
         const myHeaders = new Headers();
         myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + token);
+        myHeaders.append("Authorization", "Bearer " + loginState.token);
         const requestOptions = {
             method: "GET",
             headers: myHeaders,
@@ -102,7 +109,7 @@ const BLE: React.FC<IBleProps> = ({
 
         const myHeaders = new Headers();
         myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + token);
+        myHeaders.append("Authorization", "Bearer " + loginState.token);
 
         const formdata = new FormData();
         formdata.append("binFile", new Blob([fileData]), "upload.bin");

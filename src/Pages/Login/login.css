@@ -1,0 +1,22 @@
+.Header{
+    background-color: #fff;
+    /* height: 10vh; */
+    /* width: 100%; */
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+}
+
+.Content{
+    background-color: #e4e1e1;
+    /* text-align: center;
+    justify-content: space-evenly;
+    display: flex; */
+    /* height: 80vh; */
+}
+
+
+.Footer{
+    height: 10vh;
+
+}

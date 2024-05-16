@@ -1,6 +1,7 @@
 import BLE from '../BLE/BLE';
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from '../Login/login';
 
 
 
@@ -83,7 +84,7 @@ function App() {
                 env={"DEV"}
               />
             } />
-            <Route path='/stg' element={
+            {/* <Route path='/stg' element={
               <BLE
                 readServiceUUID={stream.readService}
                 readCharUUID={stream.readChar}
@@ -95,7 +96,8 @@ function App() {
                 baseUrl={process.env.REACT_APP_STG_BASE_URL || ""}
                 env={"STAGE"}
               />
-            } />
+            } /> */}
+            <Route path='/stg' element={<Login baseUrl={process.env.REACT_APP_DEV_BASE_URL || ""}/>} />
           </Routes>
         </Router>
         {/* <BLE
