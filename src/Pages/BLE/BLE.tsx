@@ -73,30 +73,30 @@ const BLE: React.FC<IBleProps> = ({
     const [formData, setFormData] = useState<IFormData | null>(null)
 
     const [graphData, setGraphData] = useState<any>(null)
-    // const [bglData, setBglData] = useState<any>(null)
+    const [bglData, setBglData] = useState<any>(null)
 
     
-    // const getBgl = async () => {
-    //     const myHeaders = new Headers();
-    //     myHeaders.append("Accept", "application/json");
-    //     myHeaders.append("Authorization", "Bearer " + token);
-    //     const requestOptions = {
-    //         method: "GET",
-    //         headers: myHeaders,
-    //     };
+    const getBgl = async () => {
+        const myHeaders = new Headers();
+        myHeaders.append("Accept", "application/json");
+        myHeaders.append("Authorization", "Bearer " + token);
+        const requestOptions = {
+            method: "GET",
+            headers: myHeaders,
+        };
 
-    //     const response = await fetch(`${baseUrl}/api/v1/vsgt-data-service/getBloodGlucoseLevel?timestamp=${startTimestamp}`, requestOptions)
-    //     if (!response.ok) {
-    //         alert(`HTTP error! Status: ${response.status}`)
-    //         throw new Error(`HTTP error! Status: ${response.status}`);
-    //     }
-    //     const bgl = await response.json()
+        const response = await fetch(`${baseUrl}/api/v1/vsgt-data-service/getBloodGlucoseLevel?timestamp=${startTimestamp}`, requestOptions)
+        if (!response.ok) {
+            alert(`HTTP error! Status: ${response.status}`)
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const bgl = await response.json()
 
-    //     setBglData(bgl.payload)
+        setBglData(bgl.payload)
 
-    //     return response
+        return response
 
-    // }
+    }
 
     const uploadFile = async (fileData: Uint8Array) => {
 
@@ -130,7 +130,7 @@ const BLE: React.FC<IBleProps> = ({
             }
 
             const data = await response.json();
-            // await getBgl()
+            await getBgl()
             setGraphData(data)
         } catch (error) {
             console.error("Error:", error);
@@ -408,8 +408,8 @@ const BLE: React.FC<IBleProps> = ({
 
                     {graphData && (
                         <>
-                            {/* <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                            <br /> <br /> */}
+                            <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
+                            <br /> <br />
                             <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
                             <br /><br />
 
