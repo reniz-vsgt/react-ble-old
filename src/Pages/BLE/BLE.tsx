@@ -317,7 +317,6 @@ const BLE: React.FC<IBleProps> = ({
 
     const downloadFile = () => {
         const filename = `${startTimestamp}_${formData?.subjectId}.bin`
-        setStartTimestamp("")
         const blob = new Blob([finalData], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
