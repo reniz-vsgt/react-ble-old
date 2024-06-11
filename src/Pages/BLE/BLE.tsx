@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, RequestDeviceOptions } from './BLE.types';
+import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, IFormData, RequestDeviceOptions } from './BLE.types';
 import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select, StatisticProps } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
@@ -8,27 +8,16 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import TextArea from 'antd/es/input/TextArea';
 import { Statistic } from 'antd';
 import CountUp from 'react-countup';
+import html2canvas from 'html2canvas';
+
 
 const formatter: StatisticProps['formatter'] = (value) => (
     <CountUp end={value as number} separator="," />
 );
 
-
 const { Option } = Select;
 
 cardio.register()
-
-
-export interface IFormData {
-    subjectId: string
-    age: number
-    height: number
-    weight: number
-    gender: string
-    diabetic: boolean
-    latestWeight: boolean
-    comments: string
-}
 
 const { Title } = Typography;
 const { Content } = Layout;
@@ -75,7 +64,10 @@ const BLE: React.FC<IBleProps> = ({
     const [graphData, setGraphData] = useState<any>(null)
     const [bglData, setBglData] = useState<any>(null)
 
-    
+    const [form] = Form.useForm();
+
+
+
     const getBgl = async () => {
         const myHeaders = new Headers();
         myHeaders.append("Accept", "application/json");
@@ -87,8 +79,8 @@ const BLE: React.FC<IBleProps> = ({
 
         const response = await fetch(`${baseUrl}/api/v1/vsgt-data-service/getBloodGlucoseLevel?timestamp=${startTimestamp}`, requestOptions)
         if (!response.ok) {
-            alert(`HTTP error! Status: ${response.status}`)
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            alert(`${(await response.json()).message} \nPlease try again!!`)
+            throw new Error(`HTTP error! Message: ${(await response.json()).message} Status: ${response.status}`);
         }
         const bgl = await response.json()
 
@@ -125,8 +117,8 @@ const BLE: React.FC<IBleProps> = ({
             );
 
             if (!response.ok) {
-                alert(`HTTP error! Status: ${response.status}`)
-                throw new Error(`HTTP error! Status: ${response.status}`);
+                alert(`${(await response.json()).message} \nPlease try again!!`)
+                throw new Error(`HTTP error! Message: ${(await response.json()).message} Status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -217,11 +209,6 @@ const BLE: React.FC<IBleProps> = ({
             alert("Please connect a device first")
             return;
         }
-        // if (sensorCommand == "") {
-        //     console.error('Please enter command for sensor first');
-        //     alert("Please enter command for sensor first")
-        //     return; 
-        // }
         try {
             if (service) {
                 const uint8 = new Uint8Array(16);
@@ -256,6 +243,7 @@ const BLE: React.FC<IBleProps> = ({
         try {
             if (service) {
                 try {
+                    setStartTimestamp("")
                     await readChar?.startNotifications();
                     startTimer()
                     const now = new Date();
@@ -300,11 +288,7 @@ const BLE: React.FC<IBleProps> = ({
         setDevice(null)
         setLoader(false)
         clearInterval(timer)
-        setStartTimestamp("")
-        
-        // download(finalData, device?.name + ".bin")
         uploadFile(finalData)
-
     }
 
     const startTimer = async () => {
@@ -327,6 +311,8 @@ const BLE: React.FC<IBleProps> = ({
             values.latestWeight = false
         setFormData(values)
         setIsModalOpen(false)
+        localStorage.setItem('form', JSON.stringify(values));
+
     };
 
     const downloadFile = () => {
@@ -343,6 +329,30 @@ const BLE: React.FC<IBleProps> = ({
         URL.revokeObjectURL(url);
     }
 
+    const saveGraph = () => {
+        const chartContainer = document.getElementById('chart-container');
+        if (chartContainer) {
+            html2canvas(chartContainer).then(canvas => {
+                const pngUrl = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = pngUrl;
+                a.download = 'chart.png';
+                a.click();
+            });
+        }
+
+    }
+
+    const fillForm = () =>{
+        const formdata = localStorage.getItem("form")
+        if (formdata) {
+            const values = JSON.parse(formdata)
+            form.setFieldsValue(values)
+            setFormData(values)
+        }
+        setIsModalOpen(true)
+    }
+
     // const tp = () => {
     //     console.log(process.env, "----------------------> env");
     //     console.log(process.env.REACT_APP_BASE_URL, "----------------------> BASE_URL");
@@ -350,10 +360,7 @@ const BLE: React.FC<IBleProps> = ({
     //     console.log(token, "-------------> token");
     //     console.log(baseUrl, "-------------> baseUrl");
     //     console.log(env, "-----------------> env");
-
-
     // }
-
 
 
     return (
@@ -365,9 +372,10 @@ const BLE: React.FC<IBleProps> = ({
                     <Space wrap={true} size="large">
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button> */}
+                        {/* {true ? ( */}
                         {device != null ? (
                             <>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={() => setIsModalOpen(true)}>Enter Details</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={fillForm}>Enter Details</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Start</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop</Button>
                                 <br />
@@ -408,24 +416,30 @@ const BLE: React.FC<IBleProps> = ({
 
                     {graphData && (
                         <>
-                            <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                            <br /> <br />
-                            <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
-                            <br /><br />
+                            <Space wrap={true} size="large">
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
+                            </Space>
+                            <div id='chart-container'>
+                                <Title level={3}>Timestamp : {startTimestamp}</Title>
+                                <br /><br />
+                                <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
+                                <br /> <br />
 
-                            <LineChart
-                                xAxis={[{ data: graphData.payload.ticks }]}
-                                series={[
-                                    {
-                                        data: graphData.payload.co2_percentage,
-                                        showMark: false,
-                                    },
-                                ]}
-                                height={600}
-                                width={900}
-                                margin={{ left: 30, right: 30, top: 30, bottom: 30 }}
-                                grid={{ vertical: true, horizontal: true }}
-                            />
+                                <LineChart
+                                    xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
+                                    series={[
+                                        {
+                                            data: graphData.payload.co2_percentage,
+                                            showMark: false,
+                                        },
+                                    ]}
+                                    height={600}
+                                    width={900}
+                                    margin={{ left: 30, right: 30, top: 30, bottom: 60 }}
+                                    grid={{ vertical: true, horizontal: true }}
+                                />
+                            </div>
 
                         </>
                     )}
@@ -435,13 +449,14 @@ const BLE: React.FC<IBleProps> = ({
 
             <Modal title="Enter Details" open={isModalOpen} footer={null} onCancel={handleCancel}>
                 <Form
+                    form={form}
                     name="basic"
                     labelCol={{ span: 8 }}
                     wrapperCol={{ span: 16 }}
                     style={{ maxWidth: 600 }}
                     initialValues={{ remember: true }}
                     onFinish={onFinish}
-                    autoComplete="off"
+                    autoComplete="on"
                 >
                     <Form.Item
                         label="Subject ID"
@@ -495,8 +510,6 @@ const BLE: React.FC<IBleProps> = ({
                     <Form.Item label="Comments" name={"comments"}>
                         <TextArea showCount maxLength={100} placeholder="Comments" />
                     </Form.Item>
-
-
 
                     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                         <Button type="primary" htmlType="submit">

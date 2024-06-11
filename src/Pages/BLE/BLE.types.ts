@@ -10,6 +10,18 @@ export interface IBleProps {
   env : string
 }
 
+
+export interface IFormData {
+  subjectId: string
+  age: number
+  height: number
+  weight: number
+  gender: string
+  diabetic: boolean
+  latestWeight: boolean
+  comments: string
+}
+
 export type BluetoothServiceUUID = number | string;
 export type BluetoothCharacteristicUUID = number | string;
 export type BluetoothDescriptorUUID = number | string;
