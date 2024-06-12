@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BluetoothDevice, BluetoothRemoteGATTCharacteristic, BluetoothRemoteGATTServer, IBleProps, IFormData, RequestDeviceOptions } from './BLE.types';
-import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select, StatisticProps } from 'antd';
+import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Select, StatisticProps, Badge, Card } from 'antd';
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
@@ -329,20 +329,21 @@ const BLE: React.FC<IBleProps> = ({
     }
 
     const saveGraph = () => {
+        const filename = `${startTimestamp}_${formData?.subjectId}.png`
         const chartContainer = document.getElementById('chart-container');
         if (chartContainer) {
             html2canvas(chartContainer).then(canvas => {
                 const pngUrl = canvas.toDataURL('image/png');
                 const a = document.createElement('a');
                 a.href = pngUrl;
-                a.download = 'chart.png';
+                a.download = filename;
                 a.click();
             });
         }
 
     }
 
-    const fillForm = () =>{
+    const fillForm = () => {
         const formdata = localStorage.getItem("form")
         if (formdata) {
             const values = JSON.parse(formdata)
@@ -371,7 +372,6 @@ const BLE: React.FC<IBleProps> = ({
                     <Space wrap={true} size="large">
                         <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
                         {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button> */}
-                        {/* {true ? ( */}
                         {device != null ? (
                             <>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={fillForm}>Enter Details</Button>
@@ -413,31 +413,47 @@ const BLE: React.FC<IBleProps> = ({
                         </div>
                     )}
 
+
                     {graphData && (
                         <>
                             <Space wrap={true} size="large">
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
                             </Space>
-                            <div id='chart-container'>
-                                <Title level={3}>Timestamp : {startTimestamp}</Title>
-                                <br /><br />
+
+                            <div id='chart-container' style={{ width: '90vh' }}>
+                                <Space direction="vertical" size="middle" style={{ width: '85vh' }}>
+
+                                    <br /><br />
+                                    <Badge.Ribbon text={startTimestamp} color="#83BF8D">
+                                        <Card title={"Graph for Subject : " + formData?.subjectId} >
+
+                                            <div className="card-container">
+                                <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
                                 <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
                                 <br /> <br />
 
-                                <LineChart
-                                    xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
-                                    series={[
-                                        {
-                                            data: graphData.payload.co2_percentage,
-                                            showMark: false,
-                                        },
-                                    ]}
-                                    height={600}
-                                    width={900}
-                                    margin={{ left: 30, right: 30, top: 30, bottom: 60 }}
-                                    grid={{ vertical: true, horizontal: true }}
-                                />
+                                                <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
+                                <br /> <br />
+
+                                                <LineChart
+                                                    xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
+                                                    series={[
+                                                        {
+                                                            data: graphData.payload.co2_percentage,
+                                                            showMark: false,
+                                                        },
+                                                    ]}
+                                                    height={600}
+                                                    width={900}
+                                                    margin={{ left: 30, right: 30, top: 30, bottom: 60 }}
+                                                    grid={{ vertical: true, horizontal: true }}
+                                                />
+                                            </div>
+                                        </Card>
+                                    </Badge.Ribbon>
+
+                                </Space>
                             </div>
 
                         </>
