@@ -9,6 +9,7 @@ import TextArea from 'antd/es/input/TextArea';
 import { Statistic } from 'antd';
 import CountUp from 'react-countup';
 import html2canvas from 'html2canvas';
+import { DownloadOutlined, LinkOutlined, FormOutlined, CaretRightOutlined, StopOutlined } from '@ant-design/icons';
 
 
 const formatter: StatisticProps['formatter'] = (value) => (
@@ -370,13 +371,13 @@ const BLE: React.FC<IBleProps> = ({
                 <Content style={contentStyle}>
                     <Title>{message}</Title>
                     <Space wrap={true} size="large">
-                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={connectToDevice}>Connect to Device</Button>
+                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<LinkOutlined /> } onClick={connectToDevice}>Connect to Device</Button>
                         {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button> */}
                         {device != null ? (
                             <>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={fillForm}>Enter Details</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={readCharacteristic}>Start</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={stopTimer}>Stop</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<FormOutlined />} onClick={fillForm}>Enter Details</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<CaretRightOutlined />} onClick={readCharacteristic}>Start</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<StopOutlined />} onClick={stopTimer}>Stop</Button>
                                 <br />
 
                             </>
@@ -417,8 +418,8 @@ const BLE: React.FC<IBleProps> = ({
                     {graphData && (
                         <>
                             <Space wrap={true} size="large">
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
-                                <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
                             </Space>
 
                             <div id='chart-container' style={{ width: '90vh' }}>
@@ -429,7 +430,7 @@ const BLE: React.FC<IBleProps> = ({
                                         <Card title={"Graph for Subject : " + formData?.subjectId} >
 
                                             <div className="card-container">
-                                                
+
                                                 <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
                                                 <LineChart
                                                     xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
