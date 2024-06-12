@@ -429,13 +429,8 @@ const BLE: React.FC<IBleProps> = ({
                                         <Card title={"Graph for Subject : " + formData?.subjectId} >
 
                                             <div className="card-container">
-                                <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                                <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                                <br /> <br />
-
+                                                
                                                 <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                                <br /> <br />
-
                                                 <LineChart
                                                     xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
                                                     series={[
