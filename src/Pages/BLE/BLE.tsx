@@ -4,13 +4,16 @@ import { Space, Typography, Button, Modal, Form, Input, FormProps, Switch, Selec
 import { Layout } from 'antd';
 import { cardio } from 'ldrs'
 import './BLE.css'
-import { LineChart } from '@mui/x-charts/LineChart';
 import TextArea from 'antd/es/input/TextArea';
 import { Statistic } from 'antd';
 import CountUp from 'react-countup';
 import html2canvas from 'html2canvas';
 import { DownloadOutlined, LinkOutlined, FormOutlined, CaretRightOutlined, StopOutlined } from '@ant-design/icons';
 import { uploadAccFile, uploadCo2File } from './BLE.api';
+import { Tabs } from 'antd';
+import type { TabsProps } from 'antd';
+import Graph from '../../Components/Graph';
+
 
 
 const formatter: StatisticProps['formatter'] = (value) => (
@@ -339,6 +342,27 @@ const BLE: React.FC<IBleProps> = ({
         link.click();
     }
 
+    const onChange = (key: string) => {
+        console.log(key);
+    };
+
+    const items: TabsProps['items'] = [
+        {
+            key: '1',
+            label: 'Breath Co2 percentage',
+            children: <Graph x={graphData?.payload?.ticks} y={graphData?.payload?.co2_percentage} />,
+        },
+        {
+            key: '2',
+            label: 'Breath Humidity',
+            children: <Graph x={graphData?.payload?.ticks} y={graphData?.payload?.humidity} />,
+        },
+        {
+            key: '3',
+            label: 'Breath Temperature',
+            children: <Graph x={graphData?.payload?.ticks} y={graphData?.payload?.temp} />,
+        },
+    ];
 
     // const tp = () => {
     //     console.log(process.env, "----------------------> env");
@@ -409,29 +433,16 @@ const BLE: React.FC<IBleProps> = ({
                                 <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
                             </Space>
 
-                            <div id='chart-container' style={{ width: '90vh' }}>
-                                <Space direction="vertical" size="middle" style={{ width: '85vh' }}>
+                            <div id='chart-container' style={{ width: '90vw' }}>
+                                <Space direction="vertical" size="middle" style={{ width: '1000px' }}>
 
                                     <br /><br />
-                                    <Badge.Ribbon text={startTimestamp} color="#83BF8D">
-                                        <Card title={"Graph for Subject : " + formData?.subjectId} >
+                                    <Badge.Ribbon text={startTimestamp} color="#83BF8D" placement={'end'}>
+                                        <Card className="card-header" title={"Graph for Subject : " + formData?.subjectId} >
 
                                             <div className="card-container">
-
                                                 <Statistic title="Your Blood Glucose Level" value={(bglData["blood_glucose_level_method2"]).toFixed(2)} formatter={formatter} />
-                                                <LineChart
-                                                    xAxis={[{ data: graphData.payload.ticks, label: "Ticks" }]}
-                                                    series={[
-                                                        {
-                                                            data: graphData.payload.co2_percentage,
-                                                            showMark: false,
-                                                        },
-                                                    ]}
-                                                    height={600}
-                                                    width={900}
-                                                    margin={{ left: 30, right: 30, top: 30, bottom: 60 }}
-                                                    grid={{ vertical: true, horizontal: true }}
-                                                />
+                                                <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
                                             </div>
                                         </Card>
                                     </Badge.Ribbon>
