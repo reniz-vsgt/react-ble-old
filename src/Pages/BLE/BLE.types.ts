@@ -1,5 +1,6 @@
 export interface IBleProps {
   readServiceUUID: string
+  onDemandCharUUID: string
   readCharUUID: string
   writeServiceUUID: string
   writeCharUUID: string
@@ -7,7 +8,7 @@ export interface IBleProps {
   message: string,
   token: string,
   baseUrl: string
-  env : string
+  env: string
 }
 
 

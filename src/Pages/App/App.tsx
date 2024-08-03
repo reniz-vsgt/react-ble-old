@@ -12,7 +12,8 @@ function App() {
     writeService: "dd8c1300-3ae2-5c42-b8be-96721cd710fe",
     writeChar: "dd8c1303-3ae2-5c42-b8be-96721cd710fe",
     writeValue: "0010110111110000",
-    message: "Read data as stream"
+    message: "Read data as stream",
+    onDemand_char: "dd8c1308-3ae2-5c42-b8be-96721cd710fe"
   }
 
   // const router = createHashRouter([
@@ -56,10 +57,11 @@ function App() {
       <React.StrictMode>
         <Router>
           <Routes>
-            <Route path="/" element={ <Navigate to="/react-ble" />}/>
+            <Route path="/" element={<Navigate to="/react-ble" />} />
             <Route path='/react-ble' element={
               <BLE
                 readServiceUUID={stream.readService}
+                onDemandCharUUID={stream.onDemand_char}
                 readCharUUID={stream.readChar}
                 writeServiceUUID={stream.writeService}
                 writeCharUUID={stream.writeChar}
@@ -73,6 +75,7 @@ function App() {
             <Route path='/dev' element={
               <BLE
                 readServiceUUID={stream.readService}
+                onDemandCharUUID={stream.onDemand_char}
                 readCharUUID={stream.readChar}
                 writeServiceUUID={stream.writeService}
                 writeCharUUID={stream.writeChar}
@@ -86,6 +89,7 @@ function App() {
             <Route path='/stg' element={
               <BLE
                 readServiceUUID={stream.readService}
+                onDemandCharUUID={stream.onDemand_char}
                 readCharUUID={stream.readChar}
                 writeServiceUUID={stream.writeService}
                 writeCharUUID={stream.writeChar}
@@ -100,6 +104,7 @@ function App() {
         </Router>
         {/* <BLE
           readServiceUUID={stream.readService}
+          onDemandCharUUID={stream.onDemand_char}
           readCharUUID={stream.readChar}
           writeServiceUUID={stream.writeService}
           writeCharUUID={stream.writeChar}

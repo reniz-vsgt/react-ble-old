@@ -10,6 +10,7 @@ import { Statistic } from 'antd';
 import CountUp from 'react-countup';
 import html2canvas from 'html2canvas';
 import { DownloadOutlined, LinkOutlined, FormOutlined, CaretRightOutlined, StopOutlined } from '@ant-design/icons';
+import { uploadAccFile, uploadCo2File } from './BLE.api';
 
 
 const formatter: StatisticProps['formatter'] = (value) => (
@@ -33,6 +34,7 @@ const contentStyle: React.CSSProperties = {
 
 const BLE: React.FC<IBleProps> = ({
     readServiceUUID,
+    onDemandCharUUID,
     readCharUUID,
     writeServiceUUID,
     writeCharUUID,
@@ -51,6 +53,7 @@ const BLE: React.FC<IBleProps> = ({
     const [min, setMin] = React.useState<number>(0);
     const [sec, setSec] = React.useState<number>(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [onDemandData, setOnDemandData] = useState<string[][]>([]);
 
 
     const [service, setService] = useState<BluetoothRemoteGATTServer | undefined>();
@@ -58,6 +61,9 @@ const BLE: React.FC<IBleProps> = ({
     const [writeChar, setWriteChar] = useState<BluetoothRemoteGATTCharacteristic>();
 
     const [readChar, setReadChar] = useState<BluetoothRemoteGATTCharacteristic>();
+
+    const [onDemandChar, setOnDemandChar] = useState<BluetoothRemoteGATTCharacteristic>();
+
     const [timer, setTimer] = useState<NodeJS.Timer>()
     const [startTimestamp, setStartTimestamp] = useState<string>("")
     const [formData, setFormData] = useState<IFormData | null>(null)
@@ -69,67 +75,19 @@ const BLE: React.FC<IBleProps> = ({
 
 
 
-    const getBgl = async () => {
-        const myHeaders = new Headers();
-        myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + token);
-        const requestOptions = {
-            method: "GET",
-            headers: myHeaders,
-        };
-
-        const response = await fetch(`${baseUrl}/api/v1/vsgt-data-service/getBloodGlucoseLevel?timestamp=${startTimestamp}`, requestOptions)
-        if (!response.ok) {
-            alert(`${(await response.json()).message} \nPlease try again!!`)
-            throw new Error(`HTTP error! Message: ${(await response.json()).message} Status: ${response.status}`);
-        }
-        const bgl = await response.json()
-
-        setBglData(bgl.payload)
-
-        return response
-
+    const getTimestamp = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+        const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
+        return formattedDateTime;
     }
 
-    const uploadFile = async (fileData: Uint8Array) => {
-
-        const myHeaders = new Headers();
-        myHeaders.append("Accept", "application/json");
-        myHeaders.append("Authorization", "Bearer " + token);
-
-        const formdata = new FormData();
-        formdata.append("binFile", new Blob([fileData]), "upload.bin");
-
-        const requestOptions = {
-            method: "POST",
-            headers: myHeaders,
-            body: formdata,
-        };
-
-        const deviceId = device?.name;
-
-
-
-        try {
-            const response = await fetch(
-                `${baseUrl}/api/v2/vsgt-recording-service/uploadCo2BinFile?deviceId=${deviceId}&startTime=${startTimestamp}&subjectId=${formData?.subjectId}&age=${formData?.age}&height=${formData?.height}&weight=${formData?.weight}&gender=${formData?.gender}&diabetic=${formData?.diabetic}&latestWeight=${formData?.latestWeight}&comments=${formData?.comments}`,
-
-                requestOptions
-            );
-
-            if (!response.ok) {
-                alert(`${(await response.json()).message} \nPlease try again!!`)
-                throw new Error(`HTTP error! Message: ${(await response.json()).message} Status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            await getBgl()
-            setGraphData(data)
-        } catch (error) {
-            console.error("Error:", error);
-        }
-
-    }
 
     const makeTimeForm = (time: number): void => {
         if (time < 60) {
@@ -198,6 +156,9 @@ const BLE: React.FC<IBleProps> = ({
             const writeChar = await writeService.getCharacteristic(writeCharUUID);
             setWriteChar(writeChar)
 
+            const onDemandChar = await writeService.getCharacteristic(onDemandCharUUID);
+            setOnDemandChar(onDemandChar)
+
         } catch (error) {
             console.error('Failed to connect:', error);
         }
@@ -246,20 +207,9 @@ const BLE: React.FC<IBleProps> = ({
                 try {
                     setStartTimestamp("")
                     await readChar?.startNotifications();
+                    setOnDemandData([])
                     startTimer()
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    const day = String(now.getDate()).padStart(2, '0');
-
-                    const hours = String(now.getHours()).padStart(2, '0');
-                    const minutes = String(now.getMinutes()).padStart(2, '0');
-                    const seconds = String(now.getSeconds()).padStart(2, '0');
-                    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
-
-                    const formattedDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
-
-                    setStartTimestamp(formattedDateTime)
+                    setStartTimestamp(getTimestamp())
 
                     readChar?.addEventListener('characteristicvaluechanged', (event) => {
                         const val = (event.target as BluetoothRemoteGATTCharacteristic).value?.buffer;
@@ -282,14 +232,37 @@ const BLE: React.FC<IBleProps> = ({
         }
     };
 
+    const uint8ArrayToArray = (uint8Array: Uint8Array) => {
+        var array = [getTimestamp()];
+        for (var i = 0; i < uint8Array.byteLength; i++) {
+            array.push((uint8Array[i]).toString());
+        }
+        return array;
+    }
 
 
-    const stopTimer = () => {
+
+    const onDemand = () => {
+        onDemandChar?.readValue().then((val: any) => {
+            const data = new Uint8Array(val?.buffer || new ArrayBuffer(0));
+            const arrayData = uint8ArrayToArray(data)
+            setOnDemandData(prevState => (
+                [...prevState, arrayData]
+            ))
+        })
+    }
+
+    const stopTimer = async () => {
         device?.gatt?.disconnect();
         setDevice(null)
         setLoader(false)
         clearInterval(timer)
-        uploadFile(finalData)
+        if (formData) {
+            const { graphData, bglValues } = await uploadCo2File(finalData, baseUrl, token, device?.name ? device.name : "", startTimestamp, formData)
+            setGraphData(graphData)
+            setBglData(bglValues)
+        }
+        uploadAccFile(token, baseUrl, device?.name ? device.name : "", startTimestamp, onDemandData)
     }
 
     const startTimer = async () => {
@@ -297,6 +270,7 @@ const BLE: React.FC<IBleProps> = ({
         setLoader(true)
         const intervalId = setInterval(async () => {
             setSeconds(seconds => seconds + 1)
+            onDemand();
         }, 1000)
         setTimer(intervalId)
     }
@@ -354,6 +328,18 @@ const BLE: React.FC<IBleProps> = ({
         setIsModalOpen(true)
     }
 
+    function downloadOnDemand() {
+        const fileName = `${startTimestamp}_${formData?.subjectId}_onDemand.csv`
+        let csvContent = "data:text/csv;charset=utf-8," + onDemandData.join("\n");
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", fileName);
+        document.body.appendChild(link);
+        link.click();
+    }
+
+
     // const tp = () => {
     //     console.log(process.env, "----------------------> env");
     //     console.log(process.env.REACT_APP_BASE_URL, "----------------------> BASE_URL");
@@ -371,7 +357,7 @@ const BLE: React.FC<IBleProps> = ({
                 <Content style={contentStyle}>
                     <Title>{message}</Title>
                     <Space wrap={true} size="large">
-                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<LinkOutlined /> } onClick={connectToDevice}>Connect to Device</Button>
+                        <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} icon={<LinkOutlined />} onClick={connectToDevice}>Connect to Device</Button>
                         {/* <Button style={{ backgroundColor: "#83BF8D" }} type="primary" size={'large'} onClick={tp}>TP</Button> */}
                         {device != null ? (
                             <>
@@ -418,7 +404,8 @@ const BLE: React.FC<IBleProps> = ({
                     {graphData && (
                         <>
                             <Space wrap={true} size="large">
-                                <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={downloadFile}>Download File</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={downloadFile}>Download Bin File</Button>
+                                <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={downloadOnDemand}>Download on demand File</Button>
                                 <Button style={{ backgroundColor: "#83BF8D" }} icon={<DownloadOutlined />} type="primary" size={'large'} onClick={saveGraph}>Save Graph</Button>
                             </Space>
 
