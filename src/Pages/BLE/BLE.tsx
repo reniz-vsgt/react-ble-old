@@ -77,7 +77,6 @@ const BLE: React.FC<IBleProps> = ({
     const [form] = Form.useForm();
 
 
-
     const getTimestamp = () => {
         const now = new Date();
         const year = now.getFullYear();
